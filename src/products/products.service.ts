@@ -46,11 +46,7 @@ export class ProductsService {
 
   async findOne(term: string) {
 
-    //TODO VALIDAR EL UUID POR ESTA ZONA
-
     let product: any;
-
-    console.log( { term } )
 
     if ( isUUID(term) ){
       product = await this.productRepository.findOneBy({ id: term })
@@ -70,8 +66,6 @@ export class ProductsService {
 
       return product;
     }
-
-    
 
     if( !product ) throw new NotFoundException(`No se encuentre el producto con el slug or id ${term}`)
 
