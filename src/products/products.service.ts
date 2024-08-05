@@ -50,16 +50,14 @@ export class ProductsService {
 
     let product: any;
 
-    console.log({term})
+    console.log( { term } )
 
-    if ( isUUID(term) ) {
-      product = await this.productRepository.findOneBy({id: term})
+    if ( isUUID(term) ){
+      product = await this.productRepository.findOneBy({ id: term })
       console.log('no pasa')
     }
     else {
       const queryBilder = this.productRepository.createQueryBuilder() 
-
-      console.log({queryBilder})
 
       product = await queryBilder.where(
         'UPPER(title) =:title or slug =:slug', {
