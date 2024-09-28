@@ -50,7 +50,6 @@ export class ProductsService {
 
     if ( isUUID(term) ){
       product = await this.productRepository.findOneBy({ id: term })
-      console.log('no pasa')
     }
     else {
       const queryBilder = this.productRepository.createQueryBuilder() 
@@ -72,15 +71,23 @@ export class ProductsService {
     return product
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+
+    const product = await this.productRepository.preload({
+      id: id,
+      ...updateProductDto
+    })
+
+    if (!product) throw new NotFoundException('No se encontró el id')
+
+    await this.productRepository.save( product )
+
+    return `Cambios guardados para el producto con id ${id}`
   }
 
   async remove( id: string ) {
-
     await this.findOne( id )
     await this.productRepository.delete( { id } )
-
   }
 
   private handleDBException( error: any) {
