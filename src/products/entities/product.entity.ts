@@ -1,5 +1,5 @@
 import { text } from "stream/consumers";
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Product {
@@ -42,12 +42,19 @@ export class Product {
     sizes: string[];
 
     @Column('text')
-    gender: string
+    gender: string;
+
+    @Column({
+        array: true,
+        type: 'text',
+        default: []
+    })
+    tags: string[];
 
     // ESTE BEFOREINSERT se utiliza para transformar una data antes de que pase por el servicio.
 
     @BeforeInsert()
-    checkSlugInsert() {
+    checkSlugInsert(slug?: string) {
         if(!this.slug){
                 this.slug = this.title
                   .toLocaleLowerCase()
@@ -61,9 +68,9 @@ export class Product {
             .replaceAll("'",'')
     };
 
-    /* @BeforeInsert()
-    titleToLowerCase() {
-        this.title = this.title.toLocaleLowerCase()
-    } */
+    @BeforeUpdate()
+    checkSlugUpdate() {
+        return this.checkSlugInsert( this.slug )
+    }
 
 };

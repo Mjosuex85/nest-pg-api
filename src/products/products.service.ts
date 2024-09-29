@@ -2,17 +2,13 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dtos/pagination.dto';
-
 import { validate as isUUID } from 'uuid';
-
-
 
 @Injectable()
 export class ProductsService {
-
   private readonly logger = new Logger('ProductSertices')
 
   constructor(
@@ -33,9 +29,7 @@ export class ProductsService {
   }
 
   async findAll(paginationDto: PaginationDto) {
-
     const {limit = 10, offset = 0} = paginationDto
-
     const products = await this.productRepository.find({
       take: limit,
       skip: offset,
@@ -45,7 +39,6 @@ export class ProductsService {
   } 
 
   async findOne(term: string) {
-
     let product: any;
 
     if ( isUUID(term) ){
@@ -78,11 +71,15 @@ export class ProductsService {
       ...updateProductDto
     })
 
-    if (!product) throw new NotFoundException('No se encontró el id')
+    if (!product) throw new NotFoundException(`Product with id: ${id} not found`)
 
-    await this.productRepository.save( product )
+      try {
+        await this.productRepository.save( product )
+      } catch (error) {
+      this.handleDBException(error)
+      }
 
-    return `Cambios guardados para el producto con id ${id}`
+    return product
   }
 
   async remove( id: string ) {
@@ -91,7 +88,6 @@ export class ProductsService {
   }
 
   private handleDBException( error: any) {
-
     if(error.code === '23505')
     throw new BadRequestException(error.detail);
     this.logger.error(error)
