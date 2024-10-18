@@ -1,5 +1,6 @@
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { ProductImage } from "./product-image.entity";
+import { Transform } from "class-transformer";
 
 @Entity()
 export class Product {
@@ -12,26 +13,22 @@ export class Product {
     })
     title: string;
 
-    @Column( {
-        type: 'float',
+    @Column('float',{
         default: 0
     })
     price: number;
 
-    @Column({
-        type: 'text',
+    @Column('text',{
         nullable: true
     })
     description: string;
 
-    @Column({
-        type: 'text',
+    @Column('text',{
         unique: true
     })
     slug: string;
 
-    @Column({
-        type: 'int',
+    @Column('int',{
         default: 0
     })
     stock: number;
@@ -44,19 +41,27 @@ export class Product {
     @Column('text')
     gender: string;
 
-    @Column({
+    @Column('text', {
         array: true,
-        type: 'text',
         default: []
     })
     tags: string[];
 
     @OneToMany(
+        // Primer callback, es lo que va a retornar
         () => ProductImage,
+        // segundo callback
         (productImage) => productImage.product,
-        { cascade: true }
+        // cascade busca eliminar o actualizar las imagenes relacionadas a ese producto
+        { cascade: true, eager: true }
     )
-    images?: ProductImage
+
+    // ESTE ENFOQUE DE TRANSFORM SIRVE SI QUISIERAMOS QUE SIEMPRE TRANFORME LA DATA DE UNA MANERA
+    /* @Transform(({value}) => {
+        return value.map((image: ProductImage) => image.url)
+    }) */
+    // Images es de tipo ProductImage (que es la entidad) no una intefaces o type comun
+    images?: ProductImage[]
 
     // ESTE BEFOREINSERT se utiliza para transformar una data antes de que pase por el servicio.
 
