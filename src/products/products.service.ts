@@ -3,72 +3,97 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
+import { ProductImage, Product} from './entities';
 
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger('ProductSertices')
 
   constructor(
-    @InjectRepository(Product)
+    @InjectRepository( Product )
     private readonly productRepository: Repository<Product>,
+    @InjectRepository( ProductImage )
+    private readonly productImageRepository: Repository<ProductImage>
   ) {}
 
   async create(createProductDto: CreateProductDto) {
     try {
-      const product = this.productRepository.create(createProductDto)
+      const { images = [], ...productDetails } = createProductDto
+
+      const product = this.productRepository.create({
+        ...productDetails,
+        images: images.map(( image: string) => this.productImageRepository.create({ url: image }) )
+      })
       await this.productRepository.save( product )
 
-      return product;
+      return {...product, images};
 
     } catch (error) {
      this.handleDBException(error)
     }
-  }
+  };
 
   async findAll(paginationDto: PaginationDto) {
-    const {limit = 10, offset = 0} = paginationDto
+    const { limit = 10, offset = 0 } = paginationDto
     const products = await this.productRepository.find({
       take: limit,
       skip: offset,
       //TODO: RELACIONES
+
+      /* Esta relación se puede hacer aqui,
+        pero tambien se puede crear en la entity
+        con la propiedad
+
+        que hace la realción directamente
+        eager: true
+      */
+      
+      /* relations: {
+        images: true
+      } */
     })
-    return products
-  } 
+
+    return products.map(( product ) => ({
+      ...product,
+      images: product.images.map((img) => img.url)
+    }))
+
+  };
 
   async findOne(term: string) {
-    let product: any;
+    let product: Product;
 
     if ( isUUID(term) ){
-      product = await this.productRepository.findOneBy({ id: term })
+      product = await this.productRepository.findOneBy({ 
+        id: term,
+      })
     }
     else {
-      const queryBilder = this.productRepository.createQueryBuilder() 
+      const queryBilder = this.productRepository.createQueryBuilder('prod') 
 
       product = await queryBilder.where(
         'UPPER(title) =:title or slug =:slug', {
           title: term.toUpperCase(),
           slug: term.toLocaleLowerCase()
         }
-      ).getOne();
-
-      console.log({product})
-
-      return product;
+      )
+      .leftJoinAndSelect('prod.images', 'prodImages')
+      .getOne();      
     }
-
+    
     if( !product ) throw new NotFoundException(`No se encuentre el producto con el slug or id ${term}`)
 
     return product
-  }
+  };
 
   async update(id: string, updateProductDto: UpdateProductDto) {
 
     const product = await this.productRepository.preload({
       id: id,
-      ...updateProductDto
+      ...updateProductDto,
+      images: []
     })
 
     if (!product) throw new NotFoundException(`Product with id: ${id} not found`)
@@ -80,11 +105,19 @@ export class ProductsService {
       }
 
     return product
-  }
+  };
+
+  async findOnePlain( term: string ) {
+    const product = await this.findOne(term)
+    return {
+      ...product,
+      images: product.images.map((img) => img.url)
+    }
+  };
 
   async remove( id: string ) {
-    await this.findOne( id )
-    await this.productRepository.delete( { id } )
+    const produtct = await this.findOne( id )
+    await this.productRepository.remove( produtct )
   }
 
   private handleDBException( error: any) {
