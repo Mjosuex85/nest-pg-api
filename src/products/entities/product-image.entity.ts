@@ -13,7 +13,6 @@ export class ProductImage {
 
     @ManyToOne(
         () => Product,
-
     )
     product: Product
 
