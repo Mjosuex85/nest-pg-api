@@ -58,10 +58,10 @@ export class ProductsService {
       } */
     })
 
-    return products.map(( product ) => ({
+    return products/* .map(( product ) => ({
       ...product,
       images: product.images.map((img) => img.url)
-    }))
+    })) */
 
   };
 

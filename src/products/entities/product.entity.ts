@@ -51,15 +51,14 @@ export class Product {
         // Primer callback, es lo que va a retornar
         () => ProductImage,
         // segundo callback
-        (productImage) => productImage.product,
+        ( productImage ) => productImage.product,
         // cascade busca eliminar o actualizar las imagenes relacionadas a ese producto
         { cascade: true, eager: true }
-    )
-
+     )
     // ESTE ENFOQUE DE TRANSFORM SIRVE SI QUISIERAMOS QUE SIEMPRE TRANFORME LA DATA DE UNA MANERA
-    /* @Transform(({value}) => {
+    @Transform(({value}) => {
         return value.map((image: ProductImage) => image.url)
-    }) */
+    })
     // Images es de tipo ProductImage (que es la entidad) no una intefaces o type comun
     images?: ProductImage[]
 
